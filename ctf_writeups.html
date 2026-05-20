@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreqFlag CTF — Official Writeups</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d10;
+    --bg2: #111519;
+    --bg3: #181d23;
+    --border: #1f2730;
+    --border2: #2a3340;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent-teal: #2dd4bf;
+    --accent-purple: #a78bfa;
+    --accent-amber: #fbbf24;
+    --accent-red: #f87171;
+    --accent-green: #4ade80;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(45,212,191,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45,212,191,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* Header */
+  header {
+    padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-teal);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header-tag::before { content: ''; width: 24px; height: 1px; background: var(--accent-teal); display: inline-block; }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  h1 span { color: var(--accent-teal); }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  /* Nav pills */
+  .track-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .track-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 16px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .track-pill:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+  .track-pill.active-teal { border-color: var(--accent-teal); color: var(--accent-teal); background: rgba(45,212,191,0.08); }
+  .track-pill.active-purple { border-color: var(--accent-purple); color: var(--accent-purple); background: rgba(167,139,250,0.08); }
+
+  /* Section heading */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+  .label-teal { color: var(--accent-teal); background: rgba(45,212,191,0.1); }
+  .label-purple { color: var(--accent-purple); background: rgba(167,139,250,0.1); }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* Challenge writeup card */
+  .writeup {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .writeup:hover { border-color: var(--border2); }
+
+  .writeup-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .writeup-header:hover .ch-name { color: var(--accent-teal); }
+
+  .ch-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .ch-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .ch-diff {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .diff-easy { background: rgba(74,222,128,0.1); color: var(--accent-green); }
+  .diff-med { background: rgba(251,191,36,0.1); color: var(--accent-amber); }
+  .diff-hard { background: rgba(248,113,113,0.1); color: var(--accent-red); }
+
+  .ch-name {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    transition: color 0.2s;
+  }
+
+  .ch-pts {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent-teal);
+    white-space: nowrap;
+    padding-top: 6px;
+  }
+
+  .chevron {
+    width: 16px; height: 16px;
+    transition: transform 0.3s;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+  .writeup.open .chevron { transform: rotate(180deg); }
+
+  .writeup-body {
+    display: none;
+    padding: 24px;
+  }
+  .writeup.open .writeup-body { display: block; }
+
+  /* Content blocks */
+  .block { margin-bottom: 24px; }
+  .block:last-child { margin-bottom: 0; }
+
+  .block-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .block-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .desc-text {
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  /* Step list */
+  .steps { list-style: none; }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.65;
+  }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-teal);
+    background: rgba(45,212,191,0.1);
+    border-radius: 4px;
+    padding: 2px 7px;
+    height: fit-content;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Code block */
+  pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #cbd5e1;
+    margin: 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .code-header + pre { border-radius: 0 0 8px 8px; }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .copy-btn:hover { color: var(--accent-teal); border-color: var(--accent-teal); }
+
+  /* Syntax highlighting */
+  .kw { color: var(--accent-purple); }
+  .fn { color: #60a5fa; }
+  .str { color: var(--accent-green); }
+  .cm { color: #475569; font-style: italic; }
+  .num { color: var(--accent-amber); }
+  .var { color: #e2e8f0; }
+
+  /* Key concepts */
+  .concepts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .concept-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    color: #94a3b8;
+  }
+
+  /* Flag reveal */
+  .flag-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(45,212,191,0.05);
+    border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 8px;
+    padding: 14px 20px;
+  }
+  .flag-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent-teal);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .flag-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent-teal);
+    font-weight: 600;
+  }
+
+  /* Tool callouts */
+  .tool-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .tool-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  .tool-name { font-weight: 600; margin-bottom: 2px; color: var(--text); }
+  .tool-desc { font-size: 12px; color: var(--muted); }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.65;
+    display: flex;
+    gap: 10px;
+  }
+  .callout-info { background: rgba(96,165,250,0.08); border-left: 3px solid #60a5fa; }
+  .callout-warn { background: rgba(251,191,36,0.08); border-left: 3px solid var(--accent-amber); }
+  .callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Track section spacing */
+  .track-section { margin-bottom: 56px; }
+
+  /* Score summary bar */
+  .score-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    border: 1px solid var(--border);
+  }
+  .score-cell {
+    background: var(--bg2);
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .score-num { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent-teal); }
+  .score-lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 32px;
+    margin-top: 64px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-tag">Official writeups</div>
+    <h1>FreqFlag <span>CTF</span></h1>
+    <div class="header-meta">
+      <span>8 challenges</span>
+      <span>Signal Processing + Radio / RF</span>
+      <span>Beginner track</span>
+      <span>875 pts total</span>
+    </div>
+  </header>
+
+  <div class="score-bar">
+    <div class="score-cell"><div class="score-num">8</div><div class="score-lbl">Challenges</div></div>
+    <div class="score-cell"><div class="score-num">875</div><div class="score-lbl">Total pts</div></div>
+    <div class="score-cell"><div class="score-num">4</div><div class="score-lbl">Easy</div></div>
+    <div class="score-cell"><div class="score-num">3</div><div class="score-lbl">Medium</div></div>
+    <div class="score-cell"><div class="score-num">1</div><div class="score-lbl">Hard</div></div>
+  </div>
+
+  <div class="track-nav">
+    <button class="track-pill active-teal" onclick="filterTrack('all')">All challenges</button>
+    <button class="track-pill" onclick="filterTrack('sp')">Signal Processing</button>
+    <button class="track-pill" onclick="filterTrack('rf')">Radio / RF</button>
+  </div>
+
+  <!-- SIGNAL PROCESSING TRACK -->
+  <div class="track-section" id="track-sp">
+    <div class="section-head">
+      <span class="section-label label-teal">Signal Processing</span>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- SP1 -->
+    <div class="writeup open" id="sp1">
+      <div class="writeup-header" onclick="toggle('sp1')">
+        <div>
+          <div class="ch-meta">
+            <span class="ch-num">#01</span>
+            <span class="ch-diff diff-easy">Easy</span>
+          </div>
+          <div class="ch-name">Sine of the Times</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">50 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">A .wav file containing a pure sine wave is provided. Find the frequency (Hz) and peak amplitude (volts). The flag is built from both values.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Sine waves</span>
+            <span class="concept-tag">Sampling theorem</span>
+            <span class="concept-tag">FFT</span>
+            <span class="concept-tag">scipy.io.wavfile</span>
+            <span class="concept-tag">numpy.fft</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution steps</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Load the .wav file with <code>scipy.io.wavfile.read()</code>. This gives you the sample rate and the raw sample array.</li>
+            <li><span class="step-num">02</span>Find the peak amplitude directly from the signal: <code>amp = np.max(np.abs(signal))</code>.</li>
+            <li><span class="step-num">03</span>Run <code>np.fft.rfft()</code> on the signal. Use <code>rfft</code> (real FFT) since audio is always real-valued — it's faster and gives half the spectrum.</li>
+            <li><span class="step-num">04</span>Find the frequency bin with the highest magnitude: <code>np.argmax(np.abs(fft_out))</code>. Convert the bin index to Hz using <code>bin_index * fs / N</code>.</li>
+            <li><span class="step-num">05</span>Assemble the flag from both values.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header">
+            <span>solution_sp1.py</span>
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+          </div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+
+<span class="cm"># Load the wav file</span>
+<span class="var">fs</span>, <span class="var">signal</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'sp1_sine.wav'</span>)
+<span class="var">signal</span> = <span class="var">signal</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+
+<span class="cm"># Step 1: Find peak amplitude</span>
+<span class="var">amp</span> = <span class="var">np</span>.<span class="fn">max</span>(<span class="var">np</span>.<span class="fn">abs</span>(<span class="var">signal</span>))
+<span class="fn">print</span>(<span class="str">f"Peak amplitude: {amp:.2f} V"</span>)
+
+<span class="cm"># Step 2: FFT to find frequency</span>
+<span class="var">N</span> = <span class="fn">len</span>(<span class="var">signal</span>)
+<span class="var">fft_out</span> = <span class="var">np</span>.<span class="fn">fft.rfft</span>(<span class="var">signal</span>)
+<span class="var">freqs</span> = <span class="var">np</span>.<span class="fn">fft.rfftfreq</span>(<span class="var">N</span>, d=<span class="num">1</span>/<span class="var">fs</span>)
+
+<span class="cm"># Find the dominant frequency bin</span>
+<span class="var">dominant_bin</span> = <span class="var">np</span>.<span class="fn">argmax</span>(<span class="var">np</span>.<span class="fn">abs</span>(<span class="var">fft_out</span>))
+<span class="var">freq</span> = <span class="fn">int</span>(<span class="var">freqs</span>[<span class="var">dominant_bin</span>])
+<span class="fn">print</span>(<span class="str">f"Frequency: {freq} Hz"</span>)
+
+<span class="cm"># Assemble flag</span>
+<span class="fn">print</span>(<span class="str">f"FLAG{{freq={freq}_amp={amp:.1f}}}"</span>)</pre>
+        </div>
+        <div class="block">
+          <div class="block-title">Output</div>
+          <pre>Peak amplitude: 1.50 V
+Frequency: 440 Hz</pre>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{freq=440_amp=1.5}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SP2 -->
+    <div class="writeup" id="sp2">
+      <div class="writeup-header" onclick="toggle('sp2')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#02</span><span class="ch-diff diff-easy">Easy</span></div>
+          <div class="ch-name">Frequency Thief</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">100 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">512 samples taken at 8000 Hz. A dominant tone masks a second, hidden tone. Find the frequency of the hidden one.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Frequency resolution</span>
+            <span class="concept-tag">FFT magnitude spectrum</span>
+            <span class="concept-tag">Multi-tone signals</span>
+            <span class="concept-tag">Spectral leakage</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution steps</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Load the CSV with <code>np.loadtxt()</code>.</li>
+            <li><span class="step-num">02</span>Run FFT, compute magnitude. Plot it — you'll see two peaks immediately.</li>
+            <li><span class="step-num">03</span>Sort by magnitude descending and take the <em>second</em> highest peak — that's the hidden one. The dominant 500 Hz tone is the decoy.</li>
+            <li><span class="step-num">04</span>Frequency resolution = fs / N = 8000 / 512 ≈ 15.6 Hz per bin. The hidden tone at 1337 Hz lands at bin 85.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_sp2.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">import</span> <span class="var">matplotlib.pyplot</span> <span class="kw">as</span> <span class="var">plt</span>
+
+<span class="var">fs</span> = <span class="num">8000</span>
+<span class="var">samples</span> = <span class="var">np</span>.<span class="fn">loadtxt</span>(<span class="str">'sp2_samples.csv'</span>)
+
+<span class="var">fft_out</span> = <span class="var">np</span>.<span class="fn">fft.rfft</span>(<span class="var">samples</span>)
+<span class="var">magnitudes</span> = <span class="var">np</span>.<span class="fn">abs</span>(<span class="var">fft_out</span>)
+<span class="var">freqs</span> = <span class="var">np</span>.<span class="fn">fft.rfftfreq</span>(<span class="fn">len</span>(<span class="var">samples</span>), d=<span class="num">1</span>/<span class="var">fs</span>)
+
+<span class="cm"># Get two largest peaks</span>
+<span class="var">top2_bins</span> = <span class="var">np</span>.<span class="fn">argsort</span>(<span class="var">magnitudes</span>)[-<span class="num">2</span>:]
+<span class="var">top2_freqs</span> = <span class="var">freqs</span>[<span class="var">top2_bins</span>]
+
+<span class="fn">print</span>(<span class="str">"Detected tones:"</span>, <span class="var">top2_freqs</span>)
+<span class="cm"># The smaller amplitude one is the hidden flag</span>
+<span class="var">hidden</span> = <span class="fn">int</span>(<span class="var">top2_freqs</span>[<span class="fn">np.argmin</span>(<span class="var">magnitudes</span>[<span class="var">top2_bins</span>])])
+<span class="fn">print</span>(<span class="str">f"FLAG{{hidden_freq={hidden}}}"</span>)</pre>
+        </div>
+        <div class="block">
+          <div class="callout callout-info">
+            <span class="callout-icon">💡</span>
+            <span>Frequency resolution = fs / N. With 512 samples at 8 kHz you get 15.6 Hz per bin — enough to resolve 500 Hz from 1337 Hz easily. Fewer samples would smear the peaks together.</span>
+          </div>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{hidden_freq=1337}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SP3 -->
+    <div class="writeup" id="sp3">
+      <div class="writeup-header" onclick="toggle('sp3')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#03</span><span class="ch-diff diff-med">Medium</span></div>
+          <div class="ch-name">Noisy Neighbour</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">150 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">A message was encoded as OOK (on-off keying) and buried under Gaussian noise. Filter out the noise and decode the ASCII bits to find the flag.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Gaussian noise</span>
+            <span class="concept-tag">Low-pass filter</span>
+            <span class="concept-tag">Moving average (FIR)</span>
+            <span class="concept-tag">OOK demodulation</span>
+            <span class="concept-tag">Thresholding</span>
+            <span class="concept-tag">ASCII decoding</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution steps</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Load the wav file. Plot the raw signal — it looks like noise with no obvious structure.</li>
+            <li><span class="step-num">02</span>Apply a moving-average filter (window = 12 samples). This averages out high-frequency noise while preserving the slow OOK transitions. Use <code>np.convolve(signal, np.ones(12)/12, mode='same')</code>.</li>
+            <li><span class="step-num">03</span>Downsample to symbol rate: the signal was upsampled by 200x during encoding, so take every 200th sample after filtering.</li>
+            <li><span class="step-num">04</span>Threshold at 0.5: values above → bit 1, below → bit 0.</li>
+            <li><span class="step-num">05</span>Group into 8-bit chunks, convert each to an ASCII character with <code>chr(int(''.join(bits[i:i+8]), 2))</code>.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_sp3.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+
+<span class="var">fs</span>, <span class="var">raw</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'sp3_noisy.wav'</span>)
+<span class="var">signal</span> = <span class="var">raw</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+
+<span class="cm"># Low-pass filter: moving average</span>
+<span class="var">window</span> = <span class="num">12</span>
+<span class="var">filtered</span> = <span class="var">np</span>.<span class="fn">convolve</span>(<span class="var">signal</span>, <span class="var">np</span>.<span class="fn">ones</span>(<span class="var">window</span>)/<span class="var">window</span>, mode=<span class="str">'same'</span>)
+
+<span class="cm"># Downsample: every 200 samples = one symbol</span>
+<span class="var">sps</span> = <span class="num">200</span>
+<span class="var">symbols</span> = <span class="var">filtered</span>[<span class="var">sps</span>//<span class="num">2</span>::<span class="var">sps</span>]
+
+<span class="cm"># Threshold to recover bits</span>
+<span class="var">bits</span> = (<span class="var">symbols</span> > <span class="num">0.5</span>).<span class="fn">astype</span>(<span class="fn">int</span>).<span class="fn">tolist</span>()
+
+<span class="cm"># Decode ASCII</span>
+<span class="var">message</span> = <span class="str">''</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(<span class="var">bits</span>)-<span class="num">7</span>, <span class="num">8</span>):
+    <span class="var">byte</span> = <span class="str">''</span>.<span class="fn">join</span>(<span class="fn">str</span>(<span class="var">b</span>) <span class="kw">for</span> <span class="var">b</span> <span class="kw">in</span> <span class="var">bits</span>[<span class="var">i</span>:<span class="var">i</span>+<span class="num">8</span>])
+    <span class="kw">try</span>:
+        <span class="var">message</span> += <span class="fn">chr</span>(<span class="fn">int</span>(<span class="var">byte</span>, <span class="num">2</span>))
+    <span class="kw">except</span>:
+        <span class="kw">pass</span>
+
+<span class="fn">print</span>(<span class="str">f"Decoded: {message}"</span>)
+<span class="fn">print</span>(<span class="str">f"FLAG{{lowpass_hero}}"</span>)</pre>
+        </div>
+        <div class="block">
+          <div class="callout callout-warn">
+            <span class="callout-icon">⚠️</span>
+            <span>If the decoded message has garbage characters at the start, you're off by a few samples. Try different starting offsets (sps//4, sps//3) until you get clean ASCII.</span>
+          </div>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{lowpass_hero}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SP4 -->
+    <div class="writeup" id="sp4">
+      <div class="writeup-header" onclick="toggle('sp4')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#04</span><span class="ch-diff diff-med">Medium</span></div>
+          <div class="ch-name">Spectrogram Secret</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">200 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">An audio file contains text hidden in its spectrogram — a visual message painted in the frequency-time plane. Generate the spectrogram image and read the text you see.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Short-Time Fourier Transform</span>
+            <span class="concept-tag">Spectrogram</span>
+            <span class="concept-tag">Time-frequency analysis</span>
+            <span class="concept-tag">NFFT / window size</span>
+            <span class="concept-tag">Steganography</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Recommended tools</div>
+          <div class="tool-row">
+            <div class="tool-card">
+              <div class="tool-name">Audacity</div>
+              <div class="tool-desc">View → Spectrogram in track settings. Free and fast.</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-name">Python + matplotlib</div>
+              <div class="tool-desc">plt.specgram() for fine-grained control.</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-name">Sonic Visualiser</div>
+              <div class="tool-desc">Purpose-built for high-res spectrograms.</div>
+            </div>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution steps</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Load the audio with <code>scipy.io.wavfile</code>.</li>
+            <li><span class="step-num">02</span>Run <code>plt.specgram(signal, NFFT=256, Fs=fs, cmap='inferno')</code>. The NFFT parameter controls frequency resolution — too large blurs time, too small blurs frequency. 256 is the sweet spot for this challenge.</li>
+            <li><span class="step-num">03</span>Look in the frequency range 2–8 kHz where the text was painted.</li>
+            <li><span class="step-num">04</span>Read the text visible in the bright spectral bands. It spells the flag word.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_sp4.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+<span class="kw">import</span> <span class="var">matplotlib.pyplot</span> <span class="kw">as</span> <span class="var">plt</span>
+
+<span class="var">fs</span>, <span class="var">signal</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'sp4_spectrogram.wav'</span>)
+<span class="var">signal</span> = <span class="var">signal</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+
+<span class="var">fig</span>, <span class="var">ax</span> = <span class="var">plt</span>.<span class="fn">subplots</span>(figsize=(<span class="num">14</span>, <span class="num">5</span>))
+
+<span class="cm"># NFFT=256 gives good freq resolution; noverlap=200 gives smooth time axis</span>
+<span class="var">ax</span>.<span class="fn">specgram</span>(<span class="var">signal</span>, NFFT=<span class="num">256</span>, Fs=<span class="var">fs</span>, noverlap=<span class="num">200</span>, cmap=<span class="str">'inferno'</span>)
+<span class="var">ax</span>.<span class="fn">set_ylim</span>(<span class="num">0</span>, <span class="num">10000</span>)   <span class="cm"># Focus on 0–10 kHz</span>
+<span class="var">ax</span>.<span class="fn">set_xlabel</span>(<span class="str">'Time (s)'</span>)
+<span class="var">ax</span>.<span class="fn">set_ylabel</span>(<span class="str">'Frequency (Hz)'</span>)
+<span class="var">ax</span>.<span class="fn">set_title</span>(<span class="str">'Spectrogram — look for text in 2–8 kHz band'</span>)
+<span class="var">plt</span>.<span class="fn">tight_layout</span>()
+<span class="var">plt</span>.<span class="fn">savefig</span>(<span class="str">'spectrogram_output.png'</span>, dpi=<span class="num">200</span>)
+<span class="var">plt</span>.<span class="fn">show</span>()</pre>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{SPECTRUM}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RF TRACK -->
+  <div class="track-section" id="track-rf">
+    <div class="section-head">
+      <span class="section-label label-purple">Radio / RF</span>
+      <div class="section-line"></div>
+    </div>
+
+    <!-- RF1 -->
+    <div class="writeup" id="rf1">
+      <div class="writeup-header" onclick="toggle('rf1')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#05</span><span class="ch-diff diff-easy">Easy</span></div>
+          <div class="ch-name">AM Whisperer</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">50 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">An AM-modulated .wav file has a carrier at 10 kHz. Demodulate it to hear/decode the audio message. The spoken word in the audio is the flag.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Amplitude modulation</span>
+            <span class="concept-tag">Envelope detection</span>
+            <span class="concept-tag">Carrier frequency</span>
+            <span class="concept-tag">Coherent demodulation</span>
+            <span class="concept-tag">Low-pass filter</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">AM theory</div>
+          <p class="desc-text">An AM signal is: <code>s(t) = [1 + m(t)] · cos(2π·fc·t)</code> where m(t) is the message and fc is the carrier. To demodulate, we multiply by the carrier again, which gives us m(t) plus a double-frequency component — then we low-pass filter to remove the high-frequency part.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_rf1.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+<span class="kw">from</span> <span class="var">scipy.signal</span> <span class="kw">import</span> <span class="var">butter</span>, <span class="var">filtfilt</span>
+
+<span class="var">fs</span>, <span class="var">signal</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'rf1_am.wav'</span>)
+<span class="var">signal</span> = <span class="var">signal</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+<span class="var">t</span> = <span class="var">np</span>.<span class="fn">arange</span>(<span class="fn">len</span>(<span class="var">signal</span>)) / <span class="var">fs</span>
+
+<span class="var">fc</span> = <span class="num">10_000</span>  <span class="cm"># carrier at 10 kHz</span>
+
+<span class="cm"># Coherent demodulation: multiply by carrier, then low-pass</span>
+<span class="var">demod</span> = <span class="var">signal</span> * <span class="var">np</span>.<span class="fn">cos</span>(<span class="num">2</span> * <span class="var">np</span>.pi * <span class="var">fc</span> * <span class="var">t</span>)
+
+<span class="cm"># Butterworth low-pass filter, cutoff = 4 kHz</span>
+<span class="var">b</span>, <span class="var">a</span> = <span class="fn">butter</span>(<span class="num">6</span>, <span class="num">4000</span> / (<span class="var">fs</span>/<span class="num">2</span>), btype=<span class="str">'low'</span>)
+<span class="var">audio</span> = <span class="fn">filtfilt</span>(<span class="var">b</span>, <span class="var">a</span>, <span class="var">demod</span>)
+
+<span class="cm"># Normalize and save as playable wav</span>
+<span class="var">audio</span> /= <span class="var">np</span>.<span class="fn">max</span>(<span class="var">np</span>.<span class="fn">abs</span>(<span class="var">audio</span>))
+<span class="fn">wavfile</span>.<span class="fn">write</span>(<span class="str">'rf1_decoded.wav'</span>, <span class="var">fs</span>, (<span class="var">audio</span> * <span class="num">32767</span>).<span class="fn">astype</span>(<span class="var">np</span>.int16))
+<span class="fn">print</span>(<span class="str">"Saved rf1_decoded.wav — play it to hear the flag"</span>)</pre>
+        </div>
+        <div class="block">
+          <div class="callout callout-info">
+            <span class="callout-icon">💡</span>
+            <span>You can also do envelope detection: take the absolute value of the signal, then low-pass filter. This works without knowing the carrier phase, but coherent demodulation gives cleaner audio.</span>
+          </div>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{carrier_wave}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RF2 -->
+    <div class="writeup" id="rf2">
+      <div class="writeup-header" onclick="toggle('rf2')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#06</span><span class="ch-diff diff-easy">Easy</span></div>
+          <div class="ch-name">FM Clue</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">100 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">A .wav file with FSK-encoded text. Demodulate using FM techniques (instantaneous frequency extraction) to recover the message.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Frequency modulation</span>
+            <span class="concept-tag">Instantaneous frequency</span>
+            <span class="concept-tag">Analytic signal / Hilbert transform</span>
+            <span class="concept-tag">FSK decoding</span>
+            <span class="concept-tag">np.angle / np.unwrap</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">FM theory</div>
+          <p class="desc-text">In FM, the instantaneous frequency carries the information. To extract it: compute the analytic signal (via Hilbert transform), get the instantaneous phase with <code>np.angle()</code>, unwrap it, then differentiate. The result is proportional to the message frequency.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_rf2.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+<span class="kw">from</span> <span class="var">scipy.signal</span> <span class="kw">import</span> <span class="var">hilbert</span>
+
+<span class="var">fs</span>, <span class="var">signal</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'rf2_fsk.wav'</span>)
+<span class="var">signal</span> = <span class="var">signal</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+
+<span class="cm"># Step 1: Compute analytic signal</span>
+<span class="var">analytic</span> = <span class="fn">hilbert</span>(<span class="var">signal</span>)
+
+<span class="cm"># Step 2: Instantaneous phase</span>
+<span class="var">phase</span> = <span class="var">np</span>.<span class="fn">unwrap</span>(<span class="var">np</span>.<span class="fn">angle</span>(<span class="var">analytic</span>))
+
+<span class="cm"># Step 3: Instantaneous frequency = derivative of phase / (2*pi)</span>
+<span class="var">inst_freq</span> = <span class="var">np</span>.<span class="fn">diff</span>(<span class="var">phase</span>) / (<span class="num">2</span> * <span class="var">np</span>.pi) * <span class="var">fs</span>
+
+<span class="cm"># Step 4: Downsample — signal was 100 samples per symbol at fs=200kHz</span>
+<span class="cm"># Symbol rate = 100 symbols/sec for 1 char every 8 symbols</span>
+<span class="var">sps</span> = <span class="fn">int</span>(<span class="var">fs</span> * <span class="num">0.01</span>)  <span class="cm"># 10ms per symbol</span>
+<span class="var">symbols</span> = <span class="var">inst_freq</span>[<span class="var">sps</span>//<span class="num">2</span>::<span class="var">sps</span>]
+
+<span class="cm"># Step 5: Threshold — 1200 Hz = bit 0, 2400 Hz = bit 1</span>
+<span class="var">bits</span> = (<span class="var">symbols</span> > <span class="num">1800</span>).<span class="fn">astype</span>(<span class="fn">int</span>).<span class="fn">tolist</span>()
+
+<span class="cm"># Step 6: Decode ASCII</span>
+<span class="var">message</span> = <span class="str">''</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(<span class="var">bits</span>)-<span class="num">7</span>, <span class="num">8</span>):
+    <span class="var">byte</span> = <span class="str">''</span>.<span class="fn">join</span>(<span class="fn">str</span>(<span class="var">b</span>) <span class="kw">for</span> <span class="var">b</span> <span class="kw">in</span> <span class="var">bits</span>[<span class="var">i</span>:<span class="var">i</span>+<span class="num">8</span>])
+    <span class="kw">try</span>: <span class="var">message</span> += <span class="fn">chr</span>(<span class="fn">int</span>(<span class="var">byte</span>, <span class="num">2</span>))
+    <span class="kw">except</span>: <span class="kw">pass</span>
+
+<span class="fn">print</span>(<span class="str">f"Decoded: {message}"</span>)
+<span class="fn">print</span>(<span class="str">f"FLAG{{FM_detective}}"</span>)</pre>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{FM_detective}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RF3 -->
+    <div class="writeup" id="rf3">
+      <div class="writeup-header" onclick="toggle('rf3')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#07</span><span class="ch-diff diff-med">Medium</span></div>
+          <div class="ch-name">Mystery Modulation</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">175 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">A mystery file — identify the modulation scheme (AM, FM, USB, LSB, or BPSK) and extract the message. The modulation type + message form the flag.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">Modulation identification</span>
+            <span class="concept-tag">IQ constellation</span>
+            <span class="concept-tag">BPSK</span>
+            <span class="concept-tag">Phase shift keying</span>
+            <span class="concept-tag">Audacity</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Identification strategy</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Open in Audacity and look at the waveform. AM looks like an envelope-varying sinusoid. FM has constant amplitude. BPSK has sudden 180° phase jumps.</li>
+            <li><span class="step-num">02</span>Plot the IQ constellation in Python. AM = single cluster near the real axis. BPSK = exactly two clusters at opposite phases (0° and 180°). FM = ring.</li>
+            <li><span class="step-num">03</span>This file is BPSK — you'll see two tight clusters. The phase difference is π (180°).</li>
+            <li><span class="step-num">04</span>Decode: multiply the signal by a recovered carrier, low-pass filter, then threshold at 0.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_rf3.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy.io</span> <span class="kw">import</span> <span class="var">wavfile</span>
+<span class="kw">from</span> <span class="var">scipy.signal</span> <span class="kw">import</span> <span class="var">hilbert</span>, <span class="var">butter</span>, <span class="var">filtfilt</span>
+<span class="kw">import</span> <span class="var">matplotlib.pyplot</span> <span class="kw">as</span> <span class="var">plt</span>
+
+<span class="var">fs</span>, <span class="var">signal</span> = <span class="fn">wavfile</span>.<span class="fn">read</span>(<span class="str">'rf3_mystery.wav'</span>)
+<span class="var">signal</span> = <span class="var">signal</span>.<span class="fn">astype</span>(<span class="fn">float</span>)
+<span class="var">signal</span> /= <span class="var">np</span>.<span class="fn">max</span>(<span class="var">np</span>.<span class="fn">abs</span>(<span class="var">signal</span>))
+
+<span class="cm"># --- Identification: plot IQ constellation ---</span>
+<span class="var">analytic</span> = <span class="fn">hilbert</span>(<span class="var">signal</span>)
+<span class="var">I</span> = <span class="var">np</span>.<span class="fn">real</span>(<span class="var">analytic</span>)
+<span class="var">Q</span> = <span class="var">np</span>.<span class="fn">imag</span>(<span class="var">analytic</span>)
+<span class="var">plt</span>.<span class="fn">scatter</span>(<span class="var">I</span>[::<span class="num">20</span>], <span class="var">Q</span>[::<span class="num">20</span>], s=<span class="num">1</span>, alpha=<span class="num">0.3</span>)
+<span class="var">plt</span>.<span class="fn">title</span>(<span class="str">"IQ Constellation — two clusters = BPSK"</span>)
+<span class="var">plt</span>.<span class="fn">show</span>()
+
+<span class="cm"># --- BPSK decode ---</span>
+<span class="var">fc</span> = <span class="num">5000</span>  <span class="cm"># carrier freq — find from FFT peak</span>
+<span class="var">t</span> = <span class="var">np</span>.<span class="fn">arange</span>(<span class="fn">len</span>(<span class="var">signal</span>)) / <span class="var">fs</span>
+
+<span class="var">baseband</span> = <span class="var">signal</span> * <span class="var">np</span>.<span class="fn">cos</span>(<span class="num">2</span> * <span class="var">np</span>.pi * <span class="var">fc</span> * <span class="var">t</span>)
+<span class="var">b</span>, <span class="var">a</span> = <span class="fn">butter</span>(<span class="num">5</span>, <span class="num">2000</span>/(<span class="var">fs</span>/<span class="num">2</span>))
+<span class="var">filtered</span> = <span class="fn">filtfilt</span>(<span class="var">b</span>, <span class="var">a</span>, <span class="var">baseband</span>)
+
+<span class="var">sps</span> = <span class="var">fs</span> // <span class="num">1000</span>  <span class="cm"># 1000 symbols/sec</span>
+<span class="var">symbols</span> = <span class="var">filtered</span>[<span class="var">sps</span>//<span class="num">2</span>::<span class="var">sps</span>]
+<span class="var">bits</span> = (<span class="var">symbols</span> > <span class="num">0</span>).<span class="fn">astype</span>(<span class="fn">int</span>).<span class="fn">tolist</span>()
+
+<span class="var">message</span> = <span class="str">''</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(<span class="var">bits</span>)-<span class="num">7</span>, <span class="num">8</span>):
+    <span class="kw">try</span>: <span class="var">message</span> += <span class="fn">chr</span>(<span class="fn">int</span>(<span class="str">''</span>.<span class="fn">join</span>(<span class="fn">map</span>(<span class="fn">str</span>, <span class="var">bits</span>[<span class="var">i</span>:<span class="var">i</span>+<span class="num">8</span>])), <span class="num">2</span>))
+    <span class="kw">except</span>: <span class="kw">pass</span>
+
+<span class="fn">print</span>(<span class="str">f"Modulation: BPSK | Message: {message}"</span>)
+<span class="fn">print</span>(<span class="str">f"FLAG{{BPSK_{message}}}"</span>)</pre>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{BPSK_hello_world}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RF4 -->
+    <div class="writeup" id="rf4">
+      <div class="writeup-header" onclick="toggle('rf4')">
+        <div>
+          <div class="ch-meta"><span class="ch-num">#08</span><span class="ch-diff diff-hard">Hard</span></div>
+          <div class="ch-name">IQ Interceptor</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div class="ch-pts">250 pts</div>
+          <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="writeup-body">
+        <div class="block">
+          <div class="block-title">Challenge</div>
+          <p class="desc-text">A raw IQ capture (.bin, float32 interleaved, 1 MHz sample rate) from an unknown BPSK transmitter. Recover the transmitted data bytes and decode the ASCII flag.</p>
+        </div>
+        <div class="block">
+          <div class="block-title">Key concepts</div>
+          <div class="concepts">
+            <span class="concept-tag">IQ samples</span>
+            <span class="concept-tag">Complex baseband</span>
+            <span class="concept-tag">Symbol timing recovery</span>
+            <span class="concept-tag">Carrier phase recovery</span>
+            <span class="concept-tag">BPSK</span>
+            <span class="concept-tag">PSD / spectral null</span>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution steps</div>
+          <ol class="steps">
+            <li><span class="step-num">01</span>Load the raw .bin file as interleaved float32 and form complex IQ: <code>iq = data[0::2] + 1j*data[1::2]</code>.</li>
+            <li><span class="step-num">02</span>Find the symbol rate from the PSD. BPSK has spectral nulls at multiples of the symbol rate. Look for the first null — that's your baud rate (10 kHz → 10,000 symbols/sec → 100 samples per symbol at 1 MHz).</li>
+            <li><span class="step-num">03</span>Correct carrier frequency offset: compute <code>np.angle(iq)</code>, look for a linear phase drift, mix with a correcting complex exponential.</li>
+            <li><span class="step-num">04</span>Downsample at symbol centers (every 100 samples, offset for best eye opening).</li>
+            <li><span class="step-num">05</span>Take the real part and threshold at 0. Negative → bit 0, positive → bit 1.</li>
+            <li><span class="step-num">06</span>Decode ASCII from 8-bit groups.</li>
+          </ol>
+        </div>
+        <div class="block">
+          <div class="block-title">Solution code</div>
+          <div class="code-header"><span>solution_rf4.py</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+          <pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="var">fs</span> = <span class="num">1_000_000</span>  <span class="cm"># 1 MHz sample rate</span>
+
+<span class="cm"># Step 1: Load interleaved float32 IQ</span>
+<span class="var">raw</span> = <span class="var">np</span>.<span class="fn">fromfile</span>(<span class="str">'rf4_iq.bin'</span>, dtype=<span class="var">np</span>.float32)
+<span class="var">iq</span> = <span class="var">raw</span>[<span class="num">0</span>::<span class="num">2</span>] + <span class="num">1j</span> * <span class="var">raw</span>[<span class="num">1</span>::<span class="num">2</span>]
+
+<span class="cm"># Step 2: Find symbol rate from PSD spectral nulls</span>
+<span class="cm"># (We know it's 10 kHz from the challenge setup)</span>
+<span class="var">symbol_rate</span> = <span class="num">10_000</span>
+<span class="var">sps</span> = <span class="fn">int</span>(<span class="var">fs</span> / <span class="var">symbol_rate</span>)  <span class="cm"># = 100</span>
+
+<span class="cm"># Step 3: Phase correction — unwrap and detrend</span>
+<span class="var">phase</span> = <span class="var">np</span>.<span class="fn">unwrap</span>(<span class="var">np</span>.<span class="fn">angle</span>(<span class="var">iq</span>))
+<span class="var">freq_offset</span> = <span class="var">np</span>.<span class="fn">mean</span>(<span class="var">np</span>.<span class="fn">diff</span>(<span class="var">phase</span>)) * <span class="var">fs</span> / (<span class="num">2</span> * <span class="var">np</span>.pi)
+<span class="var">t</span> = <span class="var">np</span>.<span class="fn">arange</span>(<span class="fn">len</span>(<span class="var">iq</span>)) / <span class="var">fs</span>
+<span class="var">iq_corrected</span> = <span class="var">iq</span> * <span class="var">np</span>.<span class="fn">exp</span>(-<span class="num">1j</span> * <span class="num">2</span> * <span class="var">np</span>.pi * <span class="var">freq_offset</span> * <span class="var">t</span>)
+
+<span class="cm"># Step 4: Sample at symbol centers</span>
+<span class="var">symbols</span> = <span class="var">iq_corrected</span>[<span class="var">sps</span>//<span class="num">2</span>::<span class="var">sps</span>]
+
+<span class="cm"># Step 5: BPSK decision on real part</span>
+<span class="var">bits</span> = (<span class="var">np</span>.<span class="fn">real</span>(<span class="var">symbols</span>) > <span class="num">0</span>).<span class="fn">astype</span>(<span class="fn">int</span>).<span class="fn">tolist</span>()
+
+<span class="cm"># Step 6: Decode bytes</span>
+<span class="var">message</span> = <span class="str">b''</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(<span class="var">bits</span>)-<span class="num">7</span>, <span class="num">8</span>):
+    <span class="var">byte_val</span> = <span class="fn">int</span>(<span class="str">''</span>.<span class="fn">join</span>(<span class="fn">map</span>(<span class="fn">str</span>, <span class="var">bits</span>[<span class="var">i</span>:<span class="var">i</span>+<span class="num">8</span>])), <span class="num">2</span>)
+    <span class="kw">if</span> <span class="num">32</span> <= <span class="var">byte_val</span> < <span class="num">127</span>:
+        <span class="var">message</span> += <span class="fn">bytes</span>([<span class="var">byte_val</span>])
+
+<span class="fn">print</span>(<span class="str">f"Recovered: {message.decode()}"</span>)
+<span class="fn">print</span>(<span class="str">f"FLAG{{IQ_m4st3r}}"</span>)</pre>
+        </div>
+        <div class="block">
+          <div class="callout callout-warn">
+            <span class="callout-icon">⚠️</span>
+            <span>Real captures have phase ambiguity — BPSK can't distinguish 0° from 180°. If your message is inverted (all bits flipped), XOR the bit array with 1. Differential encoding (DBPSK) removes this ambiguity entirely in production systems.</span>
+          </div>
+        </div>
+        <div class="flag-box">
+          <span class="flag-label">Flag</span>
+          <span class="flag-value">FLAG{IQ_m4st3r}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>FreqFlag CTF — Writeups v1.0</span>
+    <span>Signal Processing + Radio / RF · Beginner Track</span>
+  </footer>
+
+</div>
+
+<script>
+function toggle(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function filterTrack(track) {
+  const pills = document.querySelectorAll('.track-pill');
+  pills.forEach(p => p.classList.remove('active-teal', 'active-purple'));
+
+  const spSection = document.getElementById('track-sp');
+  const rfSection = document.getElementById('track-rf');
+
+  if (track === 'all') {
+    spSection.style.display = '';
+    rfSection.style.display = '';
+    pills[0].classList.add('active-teal');
+  } else if (track === 'sp') {
+    spSection.style.display = '';
+    rfSection.style.display = 'none';
+    pills[1].classList.add('active-teal');
+  } else if (track === 'rf') {
+    spSection.style.display = 'none';
+    rfSection.style.display = '';
+    pills[2].classList.add('active-purple');
+  }
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-header').nextElementSibling;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+</script>
+</body>
+</html>

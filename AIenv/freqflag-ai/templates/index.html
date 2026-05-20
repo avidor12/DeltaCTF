@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreqBot — FreqFlag CTF Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b0f;
+    --bg2: #0f1318;
+    --bg3: #161c24;
+    --border: #1a2130;
+    --border2: #243040;
+    --text: #dde4ee;
+    --muted: #506070;
+    --muted2: #3a4d60;
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.12);
+    --teal-glow: rgba(45,212,191,0.06);
+    --amber: #f5a623;
+    --red: #f06060;
+    --green: #50d890;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* Header */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    opacity: 0.4;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--teal);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--teal-dim);
+    flex-shrink: 0;
+  }
+
+  .logo-icon svg { width: 16px; height: 16px; }
+
+  .logo-text {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo-text span { color: var(--teal); }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .status-text {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* Challenges sidebar */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 16px 0;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .challenge-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .challenge-item:hover { background: var(--bg3); border-color: var(--border); }
+
+  .ch-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-easy { background: var(--green); }
+  .dot-med { background: var(--amber); }
+  .dot-hard { background: var(--red); }
+
+  .ch-info { flex: 1; min-width: 0; }
+  .ch-n { font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch-p { font-size: 10px; color: var(--muted); }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Welcome */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
+    padding: 40px 20px;
+    gap: 16px;
+  }
+
+  .welcome-icon {
+    width: 64px; height: 64px;
+    border: 1.5px solid var(--teal);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--teal-glow);
+    margin-bottom: 8px;
+  }
+
+  .welcome h2 {
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .welcome h2 span { color: var(--teal); }
+
+  .welcome p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 360px;
+  }
+
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 8px;
+  }
+
+  .suggestion {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    line-height: 1.5;
+    font-family: var(--mono);
+  }
+  .suggestion:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-glow); }
+  .suggestion strong { display: block; color: var(--text); font-size: 11px; margin-bottom: 2px; }
+
+  /* Messages */
+  .message {
+    display: flex;
+    gap: 12px;
+    max-width: 780px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .avatar-bot { background: var(--teal-dim); border: 1px solid rgba(45,212,191,0.3); color: var(--teal); }
+  .avatar-user { background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    max-width: 640px;
+  }
+  .bubble-bot {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 12px 4px;
+    color: var(--text);
+  }
+  .bubble-user {
+    background: var(--teal-dim);
+    border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 12px 12px 4px 12px;
+    color: var(--text);
+  }
+
+  /* Code inside bubbles */
+  .bubble code {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--teal);
+  }
+
+  .bubble pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 8px 0;
+    color: #94a3b8;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 12px 4px;
+  }
+  .typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 10px 12px 10px 16px;
+    transition: border-color 0.15s;
+  }
+  .input-row:focus-within { border-color: var(--teal); }
+
+  #user-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    max-height: 120px;
+    overflow-y: auto;
+    min-height: 22px;
+  }
+  #user-input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: var(--teal);
+    color: var(--bg);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #send-btn:hover { background: #25bfab; transform: scale(1.05); }
+  #send-btn:disabled { background: var(--border2); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-size: 10px;
+    color: var(--muted2);
+    margin-top: 8px;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" stroke="#2dd4bf" stroke-width="1.5">
+        <path d="M1 8h2M13 8h2M4 4l1.5 1.5M10.5 10.5L12 12M4 12l1.5-1.5M10.5 5.5L12 4"/>
+        <circle cx="8" cy="8" r="3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Freq<span>Bot</span></div>
+      <div class="logo-sub">FreqFlag CTF Assistant</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <span class="status-text">llama3.2 · local</span>
+    <button class="clear-btn" onclick="clearChat()">clear chat</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Signal Processing</div>
+      <div class="challenge-item" onclick="askAbout('Sine of the Times — how do I find frequency and amplitude of a wav file?')">
+        <div class="ch-dot dot-easy"></div>
+        <div class="ch-info"><div class="ch-n">Sine of the Times</div><div class="ch-p">50 pts · Easy</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('Frequency Thief — how do I find a hidden tone in a signal?')">
+        <div class="ch-dot dot-easy"></div>
+        <div class="ch-info"><div class="ch-n">Frequency Thief</div><div class="ch-p">100 pts · Easy</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('Noisy Neighbour — how do I filter noise and decode OOK signal?')">
+        <div class="ch-dot dot-med"></div>
+        <div class="ch-info"><div class="ch-n">Noisy Neighbour</div><div class="ch-p">150 pts · Medium</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('Spectrogram Secret — how do I find hidden text in a spectrogram?')">
+        <div class="ch-dot dot-med"></div>
+        <div class="ch-info"><div class="ch-n">Spectrogram Secret</div><div class="ch-p">200 pts · Medium</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Radio / RF</div>
+      <div class="challenge-item" onclick="askAbout('AM Whisperer — how do I demodulate an AM signal in Python?')">
+        <div class="ch-dot dot-easy"></div>
+        <div class="ch-info"><div class="ch-n">AM Whisperer</div><div class="ch-p">50 pts · Easy</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('FM Clue — how do I demodulate FSK using instantaneous frequency?')">
+        <div class="ch-dot dot-easy"></div>
+        <div class="ch-info"><div class="ch-n">FM Clue</div><div class="ch-p">100 pts · Easy</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('Mystery Modulation — how do I identify BPSK from an IQ constellation?')">
+        <div class="ch-dot dot-med"></div>
+        <div class="ch-info"><div class="ch-n">Mystery Modulation</div><div class="ch-p">175 pts · Medium</div></div>
+      </div>
+      <div class="challenge-item" onclick="askAbout('IQ Interceptor — how do I load and decode a raw float32 IQ binary file?')">
+        <div class="ch-dot dot-hard"></div>
+        <div class="ch-info"><div class="ch-n">IQ Interceptor</div><div class="ch-p">250 pts · Hard</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#2dd4bf" stroke-width="1.5">
+            <circle cx="14" cy="14" r="6"/>
+            <path d="M14 2v4M14 22v4M2 14h4M22 14h4M5.5 5.5l2.8 2.8M19.7 19.7l2.8 2.8M5.5 22.5l2.8-2.8M19.7 8.3l2.8-2.8"/>
+          </svg>
+        </div>
+        <h2>Hello, I'm <span>FreqBot</span></h2>
+        <p>Your AI assistant for FreqFlag CTF. I'll give hints, explain concepts, and help debug your Python — but I won't hand out flags!</p>
+        <div class="suggestion-grid">
+          <div class="suggestion" onclick="askAbout('What is FFT and how does it work?')">
+            <strong>Explain FFT</strong>
+            What is it and how do I use it?
+          </div>
+          <div class="suggestion" onclick="askAbout('How does AM modulation work and how do I demodulate it?')">
+            <strong>AM demodulation</strong>
+            How does envelope detection work?
+          </div>
+          <div class="suggestion" onclick="askAbout('My FFT is showing the wrong frequency, here is my code: fft_out = np.fft.fft(signal); freq = np.argmax(fft_out)')">
+            <strong>Debug my code</strong>
+            My FFT frequency is wrong
+          </div>
+          <div class="suggestion" onclick="askAbout('What are IQ samples and why are they used in RF?')">
+            <strong>What are IQ samples?</strong>
+            Explain complex baseband
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="user-input" placeholder="Ask for a hint, concept explanation, or code help..." rows="1"></textarea>
+        <button id="send-btn" onclick="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M14.5 8L2 14l2.5-6H14.5zM2 2l12.5 6H4.5L2 2z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter to send · Shift+Enter for new line · Click a challenge to ask about it</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let messages = [];
+let isStreaming = false;
+
+const input = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const messagesEl = document.getElementById('messages');
+const welcomeEl = document.getElementById('welcome');
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+function askAbout(text) {
+  input.value = text;
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  sendMessage();
+}
+
+function clearChat() {
+  messages = [];
+  messagesEl.innerHTML = '';
+  messagesEl.appendChild(welcomeEl);
+  welcomeEl.style.display = 'flex';
+}
+
+function appendMessage(role, content) {
+  if (welcomeEl.style.display !== 'none') welcomeEl.style.display = 'none';
+
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role === 'assistant' ? 'avatar-bot' : 'avatar-user'}`;
+  avatar.textContent = role === 'assistant' ? '⚡' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role === 'assistant' ? 'bubble-bot' : 'bubble-user'}`;
+
+  if (role === 'user') {
+    bubble.textContent = content;
+  } else {
+    bubble.innerHTML = renderMarkdown(content);
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return bubble;
+}
+
+function renderMarkdown(text) {
+  // Code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escapeHtml(code.trim())}</code></pre>`
+  );
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Line breaks
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isStreaming) return;
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  messages.push({ role: 'user', content: text });
+  appendMessage('user', text);
+
+  // Typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message';
+  typingDiv.innerHTML = `
+    <div class="avatar avatar-bot">⚡</div>
+    <div class="typing"><span></span><span></span><span></span></div>
+  `;
+  messagesEl.appendChild(typingDiv);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
+    });
+
+    typingDiv.remove();
+    const bubble = appendMessage('assistant', '');
+    let fullResponse = '';
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            fullResponse += parsed.content;
+            bubble.innerHTML = renderMarkdown(fullResponse);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          } catch {}
+        }
+      }
+    }
+
+    messages.push({ role: 'assistant', content: fullResponse });
+
+  } catch (err) {
+    typingDiv.remove();
+    appendMessage('assistant', `⚠️ Error connecting to FreqBot. Make sure the server is running.\n\nDetails: ${err.message}`);
+  }
+
+  isStreaming = false;
+  sendBtn.disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>
